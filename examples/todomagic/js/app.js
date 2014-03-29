@@ -24,6 +24,38 @@
     this.configs = {};
   };
 
+  App.prototype.handleEvent = function(evt) {
+    switch (evt.type) {
+      case 'click':
+        if (this.elements['tool-newtask'] === evt.target) {
+          this.onNewTask();
+        }
+        break;
+    }
+  };
+
+  /**
+   * Would start to listen events.
+   *
+   * @this {App}
+   * @memberof App
+   */
+  App.prototype.startListenEvents = function() {
+    this.configs.events.forEach((etype) => {
+      window.addEventListener(etype, this);
+    });
+  };
+
+  /**
+   * Create a new task while the corresponding event got triggered.
+   *
+   * @this {App}
+   * @memberof App
+   */
+  App.prototype.onNewTask = function() {
+    this.createTask();
+  };
+
   /**
    * From Tasks and other data to POD object.
    *
@@ -51,7 +83,6 @@
   App.prototype.imports = function(data) {
     Object.keys(data.tasks).forEach((taskData) => {
         var task = this.createTask(taskData);
-        this.addTask(task);
     });
   };
 
@@ -83,6 +114,19 @@
   };
 
   /**
+   * Create a task.
+   *
+   * @param {object} taskData - (optional) if it exists, would crate a task
+   *                            according to it.
+   * @return {Task}
+   * @this {App}
+   * @memberof App
+   */
+  App.prototype.createTask = function(taskData) {
+    return new Task(this, taskData);
+  };
+
+  /**
    * Broadcast to all tasks. Note it is synchronous
    *
    * @param {string} type
@@ -101,6 +145,26 @@
     });
     if (done) {
       return done();
+    }
+  };
+
+  /**
+   * To let tasks call this method to request some resources.
+   *
+   * @param {string} type
+   * @param {object} detail
+   * @param {function} response - (optional) if set, would call this
+   *                              to response
+   * @this {App}
+   * @memberof App
+   */
+  App.prototype.request = function(type, detail, response) {
+    switch (type) {
+      // Return a new task canvas to let the task to draw itself.
+      case 'task-reqeust-canvas':
+        var canvas = document.createElement('li');
+        response(canvas);
+        break;
     }
   };
 

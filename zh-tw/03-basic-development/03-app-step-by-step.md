@@ -146,13 +146,13 @@ https://developer.mozilla.org/en-US/Apps/Build/Manifest
     /                       # 應用目錄
     /manifest.webapp        # 應用描述檔
     /index.html             # 進入點
-    /js                     # 程式目錄
     /style                  # 應用的樣式目錄
     /test                   # 測試相關檔
     /locales-obj            # L10N 相關檔案。本章將先略過不介紹
 
 下列幾項則是預計增加的內容
 
+    /js                     # 程式目錄
     /js/app.js              # 主程式，應用的最主要介面
     /js/task.js             # 每則待辦事項的類別
     /style/app.css          # 應用整體的樣式
@@ -170,6 +170,7 @@ https://developer.mozilla.org/en-US/Apps/Build/Manifest
 
 1. `App` 要求各 `Task` 匯出資料給前者，以進行儲存等動作
 2. `Task` 被新增或移除後，向 `App` 要求註冊或刪除自己
+3. `Task` 建立完成後，向 `App` 要求一塊繪圖元素呈現自己
 
 就所訂定出的規格而言，這代表只要有任何類別可以透過約定的介面去發出與回應這些需求，都可以被 `App` 管理而成為待辦事項的類別。
 這樣的溝通模式是為了儘量降低兩者的耦合程度，並且盡量提升此應用的可擴充性，以應付日後章節改寫此應用的需求。
@@ -207,8 +208,77 @@ https://developer.mozilla.org/en-US/Apps/Build/Manifest
 * `/style/app.css`
 * `/style/task.css`
 
+並撰寫其中內容。本節暫時不會詳細解說這些程式與樣式的細節。讀者可以先透過下載取得這些檔案，
+然後繼續後面的步驟。在本章的最後一部分將針對這些程式與樣式進行分項解說。
+
+### 修改進入點與引入檔案
+
+因為 FirefoxOS 的應用，就技術上而言跟一般網頁相差無幾。所以我們依然需要使用標準網頁載入資源的方式去載入前述程式與樣式檔。
+也就是透過 `link` 標籤引入上述的樣式檔，而 `script` 標籤引入程式檔。
+
+接著我們還需要在該網頁中增加一些應用會用到的元素。例如在前述的 `app.js` 中，
+類別 `App` 會去尋找一些指定的元素作初始化，因此必須增加這些元素。
+
+整體而言，修改後的 `index.html` 如下列所示
+
+### 執行與手動測試
+
+理論上我們的程式已經可以正常運作了。我們可以先透過桌面版 Firefox 的功能來開啟這個應用。
+一般而言，對於本範例這種不需要使用裝置相關 API 的應用而言，透過桌面版開啟應用是最容易的測試與除錯方式。
+
+首先
+
+
+### 撰寫自動化測試
+
+
+
 ## 程式細節
 
 以下將針對工作清單會使用的類別，按照其主要的成員函式與屬性做出詳細解釋
 
-####
+### App
+
+#### App.prototype.exports
+
+此函式是用來匯出整個應用的工作清單資訊，以供存檔或其他處理之用。
+函式呼叫後，將會回傳 POD (Plain Old Data) 形式的物件。
+
+就實際的實作而言，其內容是透過 `App#broadcast` 函式，對該實體中所有待辦事項一一發出請求，
+取得全部待辦事項的資料後包裝再回傳。
+
+#### App.prototype.imports
+
+此函式可以允許應用載入前述函式所匯出的資料，並且恢復到應有的狀態。
+
+#### App.prototype.save
+
+此函式會將前述匯出的資料轉成 JSON 字串後，存在 Local Storage 中。
+
+更好的設計是讓這個函式變成一個介面，隨著所給的 Proxy 物件存取到不同的地方，
+例如存回遠端伺服器等。這部份的改動會在[第七章][1]介紹網路的時候陳述。
+
+#### App.prototype.load
+
+此函式會將前述存檔的資料再次讀出，並讓應用恢復到之前的狀態
+
+與前述函式類似：此函式也可以改成透過 Proxy 模式的方式從不同機制載入。
+
+### App.prototype.startListenEvents
+
+將會使此應用開始處理各種事件。這包括各個工具按鈕的使用等。
+
+### App.prototype.createTask
+
+暫代所謂 `TaskFactory`的角色，建立一個新的 `Task`。
+
+這在之後的章節中，可以被擴充為使用 `TaskFactory` 來生成細節不同的 `Task` 類別。
+
+### App.prototype.request
+
+允許各 `Task` 向 `App` 提出需求，例如要求要註冊自己，或是需要一塊畫布元素開始將自己畫上去。
+這與 `App.prototype.broadcast` 相反，是從 `Task` 到 `App`，而前者是 `App` 到 `Task`。
+
+---
+
+[1]: https://github.com/evanxd/fxos-magic
