@@ -7,6 +7,8 @@
    */
   var App = function() {
     this.setup();
+    this.setupElements();
+    this.startListenEvents();
   };
 
   /**
@@ -22,6 +24,12 @@
     this.tasks = {};
     this.states = {};
     this.configs = {};
+  };
+
+  App.prototype.setupElements = function() {
+    Object.keys(this.elements).forEach((id) => {
+      this.elements[id] = document.getElementById(id);
+    });
   };
 
   App.prototype.handleEvent = function(evt) {
@@ -70,7 +78,7 @@
         done = () => {
           return appPod;
         };
-    return this.broadcast();
+    return this.broadcast('app-exports', null, response, done);
   };
 
   /**
@@ -160,6 +168,9 @@
    */
   App.prototype.request = function(type, detail, response) {
     switch (type) {
+      case 'task-request-register':
+        this.tasks[detail.id] = detail.task;
+        break;
       // Return a new task canvas to let the task to draw itself.
       case 'task-reqeust-canvas':
         var canvas = document.createElement('li');
